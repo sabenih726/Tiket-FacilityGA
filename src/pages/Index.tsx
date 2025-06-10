@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TicketDisplay } from "@/components/TicketDisplay";
 import { QueueStatus } from "@/components/QueueStatus";
+import { Link } from "react-router-dom";
 
 interface ServiceType {
   id: string;
