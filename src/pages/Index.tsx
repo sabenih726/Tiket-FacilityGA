@@ -149,7 +149,7 @@ const Index = () => {
         <div className="text-center mb-8">
           <div className="flex justify-center items-center gap-4 mb-4">
             <h1 className="text-4xl font-bold text-gray-900">
-              Sistem Tiket Facility Maintenance
+              Tiket Facility Maintenance
             </h1>
             <Link to="/admin/login">
               <Button variant="outline" size="sm">
