@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AdminTicketList } from "@/components/AdminTicketList";
@@ -10,7 +10,7 @@ import { AdminReports } from "@/components/AdminReports";
 import { AdminDataExport } from "@/components/AdminDataExport";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Users, Settings, LogOut } from "lucide-react";
+import { Home, Users, Settings, LogOut, BarChart3, Download } from "lucide-react";
 
 interface QueueTicket {
   id: string;
@@ -246,22 +246,50 @@ const Admin = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Ticket Management */}
-          <AdminTicketList 
-            tickets={tickets}
-            counters={counters}
-            onUpdateTicket={updateTicketStatus}
-            isLoading={isLoading}
-          />
-          
-          {/* Counter Management */}
-          <AdminCounters 
-            counters={counters}
-            tickets={tickets}
-            onUpdateCounter={updateCounterStatus}
-          />
-        </div>
+        {/* Tab Navigation */}
+        <Tabs defaultValue="tickets" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="tickets" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Kelola Tiket
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Laporan & Analitik
+            </TabsTrigger>
+            <TabsTrigger value="export" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export Data
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="tickets" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Ticket Management */}
+              <AdminTicketList 
+                tickets={tickets}
+                counters={counters}
+                onUpdateTicket={updateTicketStatus}
+                isLoading={isLoading}
+              />
+              
+              {/* Counter Management */}
+              <AdminCounters 
+                counters={counters}
+                tickets={tickets}
+                onUpdateCounter={updateCounterStatus}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <AdminReports tickets={tickets} />
+          </TabsContent>
+
+          <TabsContent value="export" className="mt-6">
+            <AdminDataExport tickets={tickets} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
