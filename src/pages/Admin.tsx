@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AdminTicketList } from "@/components/AdminTicketList";
 import { AdminCounters } from "@/components/AdminCounters";
+import { AdminReports } from "@/components/AdminReports";
+import { AdminDataExport } from "@/components/AdminDataExport";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Link, useNavigate } from "react-router-dom";
 import { Home, Users, Settings, LogOut } from "lucide-react";
@@ -34,6 +37,7 @@ const Admin = () => {
   const [tickets, setTickets] = useState<QueueTicket[]>([]);
   const [counters, setCounters] = useState<Counter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('tickets');
   const { toast } = useToast();
   const { isAuthenticated, adminSession, logout, isLoading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
