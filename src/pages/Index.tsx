@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TicketDisplay } from "@/components/TicketDisplay";
 import { QueueStatus } from "@/components/QueueStatus";
 import { Link } from "react-router-dom";
+import { Settings } from "lucide-react";
 
 interface ServiceType {
   id: string;
@@ -146,9 +147,17 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Sistem Tiket Facility Maintenance
-          </h1>
+          <div className="flex justify-center items-center gap-4 mb-4">
+            <h1 className="text-4xl font-bold text-gray-900">
+              Sistem Tiket Facility Maintenance
+            </h1>
+            <Link to="/admin/login">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Admin
+              </Button>
+            </Link>
+          </div>
           <p className="text-gray-600">
             Ambil nomor antrian untuk layanan maintenance fasilitas
           </p>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AdminTicketList } from "@/components/AdminTicketList";
 import { AdminCounters } from "@/components/AdminCounters";
-import { Link } from "react-router-dom";
-import { Home, Users, Settings } from "lucide-react";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { Link, useNavigate } from "react-router-dom";
+import { Home, Users, Settings, LogOut } from "lucide-react";
 
 interface QueueTicket {
   id: string;
@@ -35,11 +35,21 @@ const Admin = () => {
   const [counters, setCounters] = useState<Counter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { isAuthenticated, adminSession, logout, isLoading: authLoading } = useAdminAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchTickets();
-    fetchCounters();
-  }, []);
+    if (!authLoading && !isAuthenticated) {
+      navigate('/admin/login');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTickets();
+      fetchCounters();
+    }
+  }, [isAuthenticated]);
 
   const fetchTickets = async () => {
     const { data, error } = await supabase
@@ -121,6 +131,27 @@ const Admin = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+    toast({
+      title: "Logout Berhasil",
+      description: "Anda telah keluar dari sistem",
+    });
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-lg">Memuat...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
@@ -133,6 +164,11 @@ const Admin = () => {
             <p className="text-gray-600">
               Kelola tiket dan counter facility maintenance
             </p>
+            {adminSession && (
+              <p className="text-sm text-blue-600">
+                Selamat datang, {adminSession.full_name}
+              </p>
+            )}
           </div>
           
           <div className="flex gap-2">
@@ -142,6 +178,10 @@ const Admin = () => {
                 Kembali ke Beranda
               </Button>
             </Link>
+            <Button variant="destructive" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
 
