@@ -150,6 +150,7 @@ const Index = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex justify-center items-center gap-4 mb-4">
+            <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
             <h1 className="text-4xl font-bold text-gray-900">
               Tiket Facility Maintenance
             </h1>
