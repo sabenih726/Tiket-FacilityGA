@@ -13,6 +13,8 @@ interface QueueTicket {
   service_type_id: string;
   created_at: string;
   estimated_wait_time: number;
+  called_at: string | null;
+  completed_at: string | null;
 }
 
 interface QueueStatusProps {

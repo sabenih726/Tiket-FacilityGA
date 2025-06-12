@@ -17,6 +17,8 @@ interface QueueTicket {
   created_at: string;
   estimated_wait_time: number;
   counter_assigned: number | null;
+  called_at: string | null;
+  completed_at: string | null;
 }
 
 interface Counter {
