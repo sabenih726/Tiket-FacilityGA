@@ -24,10 +24,12 @@ interface AdminReportsProps {
 }
 
 export const AdminReports = ({ tickets }: AdminReportsProps) => {
-  const today = new Date();
-  const todayTickets = tickets.filter(ticket => {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  
+  const monthlyTickets = tickets.filter(ticket => {
     const ticketDate = new Date(ticket.created_at);
-    return ticketDate.toDateString() === today.toDateString();
+    return ticketDate >= oneMonthAgo;
   });
 
   const getStatusColor = (status: string) => {
@@ -69,14 +71,17 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('id-ID', {
+    return new Date(dateString).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
-  // Statistik summary
-  const completedTickets = todayTickets.filter(t => t.status === 'completed' && t.called_at && t.completed_at);
+  // Statistik summary untuk 1 bulan
+  const completedTickets = monthlyTickets.filter(t => t.status === 'completed' && t.called_at && t.completed_at);
   const avgWaitTime = completedTickets.length > 0 
     ? completedTickets.reduce((acc, ticket) => {
         const waitTime = new Date(ticket.called_at!).getTime() - new Date(ticket.created_at).getTime();
@@ -100,8 +105,8 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-500" />
               <div>
-                <p className="text-sm text-gray-600">Total Hari Ini</p>
-                <p className="text-2xl font-bold">{todayTickets.length}</p>
+                <p className="text-sm text-gray-600">Total 1 Bulan</p>
+                <p className="text-2xl font-bold">{monthlyTickets.length}</p>
               </div>
             </div>
           </CardContent>
@@ -113,7 +118,7 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
               <CheckCircle className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Selesai</p>
-                <p className="text-2xl font-bold">{todayTickets.filter(t => t.status === 'completed').length}</p>
+                <p className="text-2xl font-bold">{monthlyTickets.filter(t => t.status === 'completed').length}</p>
               </div>
             </div>
           </CardContent>
@@ -147,7 +152,7 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
       {/* Tickets Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Tiket Hari Ini</CardTitle>
+          <CardTitle>Daftar Tiket 1 Bulan Terakhir</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -163,32 +168,34 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {todayTickets.length > 0 ? (
-                todayTickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-medium">{ticket.number}</TableCell>
-                    <TableCell>{ticket.customer_name}</TableCell>
-                    <TableCell className="max-w-xs truncate">{ticket.purpose || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(ticket.status)}>
-                        {getStatusText(ticket.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getPriorityColor(ticket.priority)}>
-                        {getPriorityText(ticket.priority)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatTime(ticket.created_at)}</TableCell>
-                    <TableCell>
-                      {ticket.counter_assigned ? `Counter ${ticket.counter_assigned}` : '-'}
-                    </TableCell>
-                  </TableRow>
-                ))
+              {monthlyTickets.length > 0 ? (
+                monthlyTickets
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map((ticket) => (
+                    <TableRow key={ticket.id}>
+                      <TableCell className="font-medium">{ticket.number}</TableCell>
+                      <TableCell>{ticket.customer_name}</TableCell>
+                      <TableCell className="max-w-xs truncate">{ticket.purpose || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(ticket.status)}>
+                          {getStatusText(ticket.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getPriorityColor(ticket.priority)}>
+                          {getPriorityText(ticket.priority)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatTime(ticket.created_at)}</TableCell>
+                      <TableCell>
+                        {ticket.counter_assigned ? `Counter ${ticket.counter_assigned}` : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    Belum ada tiket hari ini
+                    Belum ada tiket dalam 1 bulan terakhir
                   </TableCell>
                 </TableRow>
               )}
