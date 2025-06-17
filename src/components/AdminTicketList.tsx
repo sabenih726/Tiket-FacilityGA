@@ -39,6 +39,11 @@ interface AdminTicketListProps {
 export const AdminTicketList = ({ tickets, counters, onUpdateTicket, isLoading }: AdminTicketListProps) => {
   const [selectedCounter, setSelectedCounter] = useState<number | null>(null);
 
+  // Sort tickets by created_at DESC (newest first)
+  const sortedTickets = [...tickets].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'waiting': return 'secondary';
@@ -110,8 +115,8 @@ export const AdminTicketList = ({ tickets, counters, onUpdateTicket, isLoading }
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {tickets.length > 0 ? (
-            tickets.map((ticket) => (
+          {sortedTickets.length > 0 ? (
+            sortedTickets.map((ticket) => (
               <div key={ticket.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Users, CheckCircle } from "lucide-react";
 
 interface QueueTicket {
@@ -29,27 +30,52 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
     return ticketDate.toDateString() === today.toDateString();
   });
 
-  // Statistik per status
-  const statusData = [
-    { name: 'Menunggu', value: todayTickets.filter(t => t.status === 'waiting').length, color: '#f59e0b' },
-    { name: 'Dipanggil', value: todayTickets.filter(t => t.status === 'called').length, color: '#3b82f6' },
-    { name: 'Dilayani', value: todayTickets.filter(t => t.status === 'serving').length, color: '#ef4444' },
-    { name: 'Selesai', value: todayTickets.filter(t => t.status === 'completed').length, color: '#10b981' }
-  ];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'waiting': return 'secondary';
+      case 'called': return 'default';
+      case 'serving': return 'destructive';
+      case 'completed': return 'outline';
+      default: return 'outline';
+    }
+  };
 
-  // Statistik per jam (hari ini)
-  const hourlyData = Array.from({ length: 24 }, (_, hour) => {
-    const ticketsInHour = todayTickets.filter(ticket => {
-      const ticketHour = new Date(ticket.created_at).getHours();
-      return ticketHour === hour;
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'waiting': return 'Menunggu';
+      case 'called': return 'Dipanggil';
+      case 'serving': return 'Dilayani';
+      case 'completed': return 'Selesai';
+      default: return status;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'emergency': return 'destructive';
+      case 'urgent': return 'secondary';
+      case 'normal': return 'default';
+      default: return 'outline';
+    }
+  };
+
+  const getPriorityText = (priority: string) => {
+    switch (priority) {
+      case 'emergency': return 'Darurat';
+      case 'urgent': return 'Mendesak';
+      case 'normal': return 'Normal';
+      default: return priority;
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
-    return {
-      hour: `${hour.toString().padStart(2, '0')}:00`,
-      tiket: ticketsInHour.length
-    };
-  }).filter(data => data.tiket > 0);
+  };
 
-  // Rata-rata waktu tunggu
+  // Statistik summary
   const completedTickets = todayTickets.filter(t => t.status === 'completed' && t.called_at && t.completed_at);
   const avgWaitTime = completedTickets.length > 0 
     ? completedTickets.reduce((acc, ticket) => {
@@ -87,7 +113,7 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
               <CheckCircle className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Selesai</p>
-                <p className="text-2xl font-bold">{statusData[3].value}</p>
+                <p className="text-2xl font-bold">{todayTickets.filter(t => t.status === 'completed').length}</p>
               </div>
             </div>
           </CardContent>
@@ -118,53 +144,58 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribusi Status Tiket Hari Ini</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Hourly Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribusi Tiket per Jam (Hari Ini)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={hourlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="tiket" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Tickets Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar Tiket Hari Ini</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>No. Tiket</TableHead>
+                <TableHead>Nama</TableHead>
+                <TableHead>Keperluan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Prioritas</TableHead>
+                <TableHead>Waktu Dibuat</TableHead>
+                <TableHead>Counter</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {todayTickets.length > 0 ? (
+                todayTickets.map((ticket) => (
+                  <TableRow key={ticket.id}>
+                    <TableCell className="font-medium">{ticket.number}</TableCell>
+                    <TableCell>{ticket.customer_name}</TableCell>
+                    <TableCell className="max-w-xs truncate">{ticket.purpose || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(ticket.status)}>
+                        {getStatusText(ticket.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getPriorityColor(ticket.priority)}>
+                        {getPriorityText(ticket.priority)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatTime(ticket.created_at)}</TableCell>
+                    <TableCell>
+                      {ticket.counter_assigned ? `Counter ${ticket.counter_assigned}` : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    Belum ada tiket hari ini
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
