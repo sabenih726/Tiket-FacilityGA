@@ -1,8 +1,9 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Clock, Users, CheckCircle } from "lucide-react";
+import { TrendingUp, Clock, Users, CheckCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface QueueTicket {
   id: string;
@@ -23,7 +24,13 @@ interface AdminReportsProps {
   tickets: QueueTicket[];
 }
 
+type SortField = 'number' | 'customer_name' | 'status' | 'priority' | 'created_at' | 'counter_assigned';
+type SortDirection = 'asc' | 'desc' | null;
+
 export const AdminReports = ({ tickets }: AdminReportsProps) => {
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
   
@@ -31,6 +38,77 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
     const ticketDate = new Date(ticket.created_at);
     return ticketDate >= oneMonthAgo;
   });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null);
+        setSortField('created_at');
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedTickets = () => {
+    if (!sortDirection) {
+      return monthlyTickets.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    return [...monthlyTickets].sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      // Handle null values
+      if (aValue === null && bValue === null) return 0;
+      if (aValue === null) return sortDirection === 'asc' ? 1 : -1;
+      if (bValue === null) return sortDirection === 'asc' ? -1 : 1;
+
+      // Convert to comparable values
+      if (sortField === 'created_at') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      } else if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    
+    if (sortDirection === 'asc') {
+      return <ArrowUp className="h-4 w-4 text-blue-600" />;
+    } else if (sortDirection === 'desc') {
+      return <ArrowDown className="h-4 w-4 text-blue-600" />;
+    }
+    
+    return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+  };
+
+  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-50 select-none"
+      onClick={() => handleSort(field)}
+    >
+      <div className="flex items-center gap-2">
+        {children}
+        {getSortIcon(field)}
+      </div>
+    </TableHead>
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -96,6 +174,8 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
       }, 0) / completedTickets.length
     : 0;
 
+  const sortedTickets = getSortedTickets();
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -153,45 +233,44 @@ export const AdminReports = ({ tickets }: AdminReportsProps) => {
       <Card>
         <CardHeader>
           <CardTitle>Daftar Tiket 1 Bulan Terakhir</CardTitle>
+          <p className="text-sm text-gray-600">Klik pada header kolom untuk mengurutkan data</p>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>No. Tiket</TableHead>
-                <TableHead>Nama</TableHead>
+                <SortableHeader field="number">No. Tiket</SortableHeader>
+                <SortableHeader field="customer_name">Nama</SortableHeader>
                 <TableHead>Keperluan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Prioritas</TableHead>
-                <TableHead>Waktu Dibuat</TableHead>
-                <TableHead>Counter</TableHead>
+                <SortableHeader field="status">Status</SortableHeader>
+                <SortableHeader field="priority">Prioritas</SortableHeader>
+                <SortableHeader field="created_at">Waktu Dibuat</SortableHeader>
+                <SortableHeader field="counter_assigned">Counter</SortableHeader>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {monthlyTickets.length > 0 ? (
-                monthlyTickets
-                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                  .map((ticket) => (
-                    <TableRow key={ticket.id}>
-                      <TableCell className="font-medium">{ticket.number}</TableCell>
-                      <TableCell>{ticket.customer_name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{ticket.purpose || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(ticket.status)}>
-                          {getStatusText(ticket.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getPriorityColor(ticket.priority)}>
-                          {getPriorityText(ticket.priority)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatTime(ticket.created_at)}</TableCell>
-                      <TableCell>
-                        {ticket.counter_assigned ? `Counter ${ticket.counter_assigned}` : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))
+              {sortedTickets.length > 0 ? (
+                sortedTickets.map((ticket) => (
+                  <TableRow key={ticket.id}>
+                    <TableCell className="font-medium">{ticket.number}</TableCell>
+                    <TableCell>{ticket.customer_name}</TableCell>
+                    <TableCell className="max-w-xs truncate">{ticket.purpose || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(ticket.status)}>
+                        {getStatusText(ticket.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getPriorityColor(ticket.priority)}>
+                        {getPriorityText(ticket.priority)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatTime(ticket.created_at)}</TableCell>
+                    <TableCell>
+                      {ticket.counter_assigned ? `Counter ${ticket.counter_assigned}` : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
