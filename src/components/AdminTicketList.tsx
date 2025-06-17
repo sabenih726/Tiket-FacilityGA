@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, Play, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Phone, Play, CheckCircle, Clock, AlertCircle, Trash2 } from "lucide-react";
 
 interface QueueTicket {
   id: string;
@@ -33,10 +34,11 @@ interface AdminTicketListProps {
   tickets: QueueTicket[];
   counters: Counter[];
   onUpdateTicket: (ticketId: string, status: string, counterId?: number) => void;
+  onDeleteTicket: (ticketId: string) => void;
   isLoading: boolean;
 }
 
-export const AdminTicketList = ({ tickets, counters, onUpdateTicket, isLoading }: AdminTicketListProps) => {
+export const AdminTicketList = ({ tickets, counters, onUpdateTicket, onDeleteTicket, isLoading }: AdminTicketListProps) => {
   const [selectedCounter, setSelectedCounter] = useState<number | null>(null);
 
   // Sort tickets by created_at DESC (newest first)
@@ -138,6 +140,38 @@ export const AdminTicketList = ({ tickets, counters, onUpdateTicket, isLoading }
                     <Badge variant={getPriorityColor(ticket.priority)}>
                       {getPriorityText(ticket.priority)}
                     </Badge>
+                    
+                    {/* Delete Button */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus Tiket</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus tiket <strong>{ticket.number}</strong> atas nama <strong>{ticket.customer_name}</strong>?
+                            <br />
+                            <span className="text-red-600 font-medium">Tindakan ini tidak dapat dibatalkan.</span>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onDeleteTicket(ticket.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Hapus Tiket
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,6 +137,28 @@ const Admin = () => {
     }
   };
 
+  const deleteTicket = async (ticketId: string) => {
+    const { error } = await supabase
+      .from('queue_tickets')
+      .delete()
+      .eq('id', ticketId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus tiket",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Berhasil",
+        description: "Tiket berhasil dihapus",
+      });
+      fetchTickets();
+      fetchCounters();
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
@@ -273,6 +294,7 @@ const Admin = () => {
                 tickets={tickets}
                 counters={counters}
                 onUpdateTicket={updateTicketStatus}
+                onDeleteTicket={deleteTicket}
                 isLoading={isLoading}
               />
               
