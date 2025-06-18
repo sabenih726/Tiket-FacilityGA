@@ -96,34 +96,40 @@ const Index = () => {
       const selectedService = serviceTypes.find(s => s.id === selectedServiceType);
       if (!selectedService) return;
 
-      // Get current date for daily reset
-      const today = new Date().toISOString().split('T')[0];
+      // Get current date in YYYYMMDD format
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
       
-      // Count tickets created today for this service type
+      // Count tickets created today for this service type to get next sequence number
       const { data: todayTickets, error: countError } = await supabase
         .from('queue_tickets')
         .select('number')
         .eq('service_type_id', selectedServiceType)
-        .gte('created_at', `${today}T00:00:00.000Z`)
-        .lt('created_at', `${today}T23:59:59.999Z`)
-        .order('created_at', { ascending: false });
+        .gte('created_at', `${today.toISOString().split('T')[0]}T00:00:00.000Z`)
+        .lt('created_at', `${today.toISOString().split('T')[0]}T23:59:59.999Z`)
+        .order('created_at', { ascending: true });
 
       if (countError) throw countError;
 
-      // Calculate next number for today
-      let nextNumber = 1;
+      // Calculate next sequence number for today
+      let nextSequence = 1;
       if (todayTickets && todayTickets.length > 0) {
-        // Find the highest number used today
-        const lastTicket = todayTickets[0];
-        const lastNumberMatch = lastTicket.number.match(/\d+$/);
-        if (lastNumberMatch) {
-          nextNumber = parseInt(lastNumberMatch[0]) + 1;
+        // Extract sequence numbers from existing tickets today
+        const sequences = todayTickets
+          .map(ticket => {
+            // Extract sequence from format: PREFIX-YYYYMMDD-XXX
+            const match = ticket.number.match(/-(\d{3})$/);
+            return match ? parseInt(match[1]) : 0;
+          })
+          .filter(seq => seq > 0);
+        
+        if (sequences.length > 0) {
+          nextSequence = Math.max(...sequences) + 1;
         }
       }
 
-      // Generate ticket number with date prefix
-      const datePrefix = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      const ticketNumber = `${selectedService.prefix}${datePrefix}${nextNumber.toString().padStart(3, '0')}`;
+      // Generate consistent ticket number: PREFIX-YYYYMMDD-XXX
+      const ticketNumber = `${selectedService.prefix}-${dateStr}-${nextSequence.toString().padStart(3, '0')}`;
 
       // Create ticket
       const { data: ticketData, error: ticketError } = await supabase
@@ -145,7 +151,7 @@ const Index = () => {
       // Update service type current number (for display purposes)
       await supabase
         .from('service_types')
-        .update({ current_number: nextNumber })
+        .update({ current_number: nextSequence })
         .eq('id', selectedServiceType);
 
       setCurrentTicket(ticketData);
