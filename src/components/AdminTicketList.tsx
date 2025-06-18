@@ -41,10 +41,29 @@ interface AdminTicketListProps {
 export const AdminTicketList = ({ tickets, counters, onUpdateTicket, onDeleteTicket, isLoading }: AdminTicketListProps) => {
   const [selectedCounter, setSelectedCounter] = useState<number | null>(null);
 
-  // Sort tickets by created_at DESC (newest first)
-  const sortedTickets = [...tickets].sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  // Stable sort tickets by priority, then by created_at DESC (newest first)
+  // This ensures consistent ordering regardless of array changes
+  const sortedTickets = [...tickets].sort((a, b) => {
+    // First sort by priority (emergency > urgent > normal)
+    const priorityOrder = { emergency: 3, urgent: 2, normal: 1 };
+    const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+    const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+    
+    if (aPriority !== bPriority) {
+      return bPriority - aPriority; // Higher priority first
+    }
+    
+    // Then sort by created_at (newest first), but with stable secondary sort by ID for consistency
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    
+    if (timeA !== timeB) {
+      return timeB - timeA;
+    }
+    
+    // If times are exactly the same, sort by ID for stability
+    return a.id.localeCompare(b.id);
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,13 +138,16 @@ export const AdminTicketList = ({ tickets, counters, onUpdateTicket, onDeleteTic
         <div className="space-y-4">
           {sortedTickets.length > 0 ? (
             sortedTickets.map((ticket) => (
-              <div key={ticket.id} className="border rounded-lg p-4 space-y-3">
+              <div 
+                key={`ticket-${ticket.id}`} 
+                className="border rounded-lg p-4 space-y-3 transition-all duration-200 hover:shadow-sm"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="text-lg font-bold text-blue-600">
+                    <div className="text-lg font-bold text-blue-600 min-w-[80px]">
                       {ticket.number}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="font-medium">{ticket.customer_name}</div>
                       <div className="text-sm text-gray-500">
                         Dibuat: {formatTime(ticket.created_at)}
@@ -133,7 +155,7 @@ export const AdminTicketList = ({ tickets, counters, onUpdateTicket, onDeleteTic
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Badge variant={getStatusColor(ticket.status)}>
                       {getStatusText(ticket.status)}
                     </Badge>
@@ -190,7 +212,11 @@ export const AdminTicketList = ({ tickets, counters, onUpdateTicket, onDeleteTic
                 <div className="flex gap-2 flex-wrap">
                   {ticket.status === 'waiting' && (
                     <div className="flex items-center gap-2">
-                      <Select value={selectedCounter?.toString() || ""} onValueChange={(value) => setSelectedCounter(parseInt(value))}>
+                      <Select 
+                        key={`select-${ticket.id}`}
+                        value={selectedCounter?.toString() || ""} 
+                        onValueChange={(value) => setSelectedCounter(parseInt(value))}
+                      >
                         <SelectTrigger className="w-40">
                           <SelectValue placeholder="Pilih Counter" />
                         </SelectTrigger>
